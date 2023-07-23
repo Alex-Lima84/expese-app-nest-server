@@ -4,7 +4,6 @@ import {
   Param,
   UseGuards,
   Req,
-  InternalServerErrorException,
   ForbiddenException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
@@ -13,7 +12,7 @@ import { Request } from 'express';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly userService: UsersService) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @Get(':userEmail')
   @UseGuards(JwtAuthGuard)
@@ -25,14 +24,7 @@ export class UsersController {
       throw new ForbiddenException('Forbidden');
     }
 
-    try {
-      const userInfo = await this.userService.getUserInfo(userEmail);
-      return userInfo;
-    } catch (error) {
-      console.error(error);
-      throw new InternalServerErrorException(
-        'An error occurred while retrieving user information',
-      );
-    }
+    const userInfo = await this.usersService.getUserInfo(userEmail);
+    return userInfo;
   }
 }

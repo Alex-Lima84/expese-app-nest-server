@@ -22,6 +22,30 @@ export class AuthService {
     this.jwtSecret = process.env.JWTSECRET;
   }
 
+  async signin(
+    email: string,
+    firstName: string,
+    lastName: string,
+    password: string,
+  ): Promise<any> {
+    try {
+      const salt = bcrypt.genSaltSync(10);
+      const hashedPassword = bcrypt.hashSync(password, salt);
+
+      const query =
+        'INSERT INTO users (email, first_name, last_name, hashed_password) VALUES($1, $2, $3, $4)';
+      const values = [email, firstName, lastName, hashedPassword];
+      await this.pool.query(query, values);
+
+      const token = jwt.sign({ email }, this.jwtSecret, { expiresIn: '1hr' });
+
+      return { email, token };
+    } catch (error) {
+      console.error('Error during signup:', error);
+      return { detail: 'Signup failed' };
+    }
+  }
+
   async login(email: string, password: string): Promise<any> {
     try {
       const query = 'SELECT * FROM users WHERE email = $1';
