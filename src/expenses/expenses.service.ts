@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Pool, QueryResult } from 'pg';
+import { ExpenseEntryDto } from './dtos/expense-entry-dto';
 
 @Injectable()
 export class ExpensesService {
@@ -50,7 +51,9 @@ export class ExpensesService {
 
   async getExpensesCategories(): Promise<any> {
     try {
-      const result = await this.pool.query('SELECT * FROM expense_categories');
+      const result: QueryResult = await this.pool.query(
+        'SELECT * FROM expense_categories',
+      );
 
       return result.rows;
     } catch (error) {
@@ -58,6 +61,52 @@ export class ExpensesService {
       throw new Error(
         'An error occurred while retrieving expenses categories information',
       );
+    }
+  }
+
+  async getExpenseTypes(userEmail: string, categoryId: string): Promise<any[]> {
+    try {
+      const result: QueryResult = await this.pool.query(
+        'SELECT * FROM expense_types WHERE expense_category = $1',
+        [categoryId],
+      );
+      return result.rows;
+    } catch (error) {
+      console.error(error);
+      throw new Error('An error occurred while retrieving expense types');
+    }
+  }
+
+  async createExpenseEntry(expenseEntry: ExpenseEntryDto): Promise<any> {
+    try {
+      const {
+        expenseTypeName,
+        expenseAmount,
+        expenseCategoryName,
+        expenseDate,
+        expenseYear,
+        expenseMonth,
+        id,
+        userEmail,
+      } = expenseEntry;
+      const result = await this.pool.query(
+        `INSERT INTO expenses (expense_type, expense_amount, expense_category, expense_date, expense_year, expense_month, id, user_email) 
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          expenseTypeName,
+          expenseAmount,
+          expenseCategoryName,
+          expenseDate,
+          expenseYear,
+          expenseMonth,
+          id,
+          userEmail,
+        ],
+      );
+      return result;
+    } catch (error) {
+      console.error(error);
+      throw new Error('An error occurred while creating the expense entry');
     }
   }
 }
