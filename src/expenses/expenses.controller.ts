@@ -7,12 +7,13 @@ import {
   UseGuards,
   Body,
   Post,
+  Put,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { ExpensesService } from './expenses.service';
 import { JwtAuthGuard } from 'src/jwt-guard/jwt-auth.guard';
-import { ExpenseEntryDto } from './dtos/expense-entry-dto';
+import { ExpenseDto } from './dtos/expense-dto';
 
 @Controller('expenses')
 @UseGuards(JwtAuthGuard)
@@ -37,6 +38,26 @@ export class ExpensesController {
         expenseQuantity,
       );
       res.json(expenses);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: 'An error occurred' });
+    }
+  }
+
+  @Get('/expense/:userEmail/:id')
+  async getExpenseInfo(
+    @Param('userEmail') userEmail: string,
+    @Param('id') id: string,
+    @Res() res: Response,
+  ) {
+    try {
+      const expenseInfo = await this.expensesService.getExpenseInfo(
+        userEmail,
+        id,
+      );
+      res.json(expenseInfo);
     } catch (error) {
       console.error(error);
       res
@@ -87,7 +108,7 @@ export class ExpensesController {
 
   @Post('/expense-entry')
   async createExpenseEntry(
-    @Body() expenseEntryDto: ExpenseEntryDto,
+    @Body() expenseEntryDto: ExpenseDto,
     @Res() res: Response,
   ) {
     try {
@@ -112,6 +133,41 @@ export class ExpensesController {
         userEmail,
       });
       res.json(newExpense);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: 'An error occurred' });
+    }
+  }
+
+  @Put('/expense/:userEmail/:id')
+  async editExpense(
+    @Body() expenseUpdateDto: ExpenseDto,
+    @Res() res: Response,
+  ) {
+    try {
+      const {
+        expenseTypeName,
+        expenseAmount,
+        expenseCategoryName,
+        expenseDate,
+        expenseYear,
+        expenseMonth,
+        userEmail,
+        id,
+      } = expenseUpdateDto;
+      const editExpense = await this.expensesService.editExpense({
+        expenseTypeName,
+        expenseAmount,
+        expenseCategoryName,
+        expenseDate,
+        expenseYear,
+        expenseMonth,
+        id,
+        userEmail,
+      });
+      res.json(editExpense);
     } catch (error) {
       console.error(error);
       res

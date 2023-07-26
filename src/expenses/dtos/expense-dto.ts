@@ -1,4 +1,4 @@
-export interface ExpenseEntryDto {
+export interface ExpenseDto {
   expenseTypeName: string;
   expenseAmount: string;
   expenseCategoryName: string;
@@ -6,5 +6,5 @@ export interface ExpenseEntryDto {
   expenseYear: string;
   expenseMonth: string;
   userEmail: string;
-  id: string;
+  id?: string;
 }

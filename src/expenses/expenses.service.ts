@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Pool, QueryResult } from 'pg';
-import { ExpenseEntryDto } from './dtos/expense-entry-dto';
+import { ExpenseDto } from './dtos/expense-dto';
 
 @Injectable()
 export class ExpensesService {
@@ -49,6 +49,19 @@ export class ExpensesService {
     }
   }
 
+  async getExpenseInfo(userEmail: string, id: string): Promise<any> {
+    try {
+      const result: QueryResult = await this.pool.query(
+        'SELECT expense_type, expense_amount, expense_category, expense_date, expense_year, expense_month, id, updated_at FROM expenses WHERE user_email = $1 AND id = $2',
+        [userEmail, id],
+      );
+
+      return result.rows;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   async getExpensesCategories(): Promise<any> {
     try {
       const result: QueryResult = await this.pool.query(
@@ -77,7 +90,7 @@ export class ExpensesService {
     }
   }
 
-  async createExpenseEntry(expenseEntry: ExpenseEntryDto): Promise<any> {
+  async createExpenseEntry(expenseEntry: ExpenseDto): Promise<any> {
     try {
       const {
         expenseTypeName,
@@ -101,6 +114,40 @@ export class ExpensesService {
           expenseMonth,
           id,
           userEmail,
+        ],
+      );
+      return result;
+    } catch (error) {
+      console.error(error);
+      throw new Error('An error occurred while creating the expense entry');
+    }
+  }
+
+  async editExpense(expenseEntry: ExpenseDto): Promise<any> {
+    try {
+      const updated_at = new Date();
+      const {
+        expenseTypeName,
+        expenseAmount,
+        expenseCategoryName,
+        expenseDate,
+        expenseYear,
+        expenseMonth,
+        id,
+        userEmail,
+      } = expenseEntry;
+      const result = await this.pool.query(
+        'UPDATE expenses SET expense_type = $1, expense_amount = $2, expense_category = $3, expense_date = $4, expense_year = $5, expense_month = $6, updated_at = $7 WHERE user_email = $8 AND id = $9;',
+        [
+          expenseTypeName,
+          expenseAmount,
+          expenseCategoryName,
+          expenseDate,
+          expenseYear,
+          expenseMonth,
+          updated_at,
+          userEmail,
+          id,
         ],
       );
       return result;
