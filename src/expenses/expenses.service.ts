@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Pool, QueryResult } from 'pg';
-import { ExpenseDto } from './dtos/expense-dto';
+import {
+  ExpenseDto,
+  FormattedExpense,
+  ExpensesCategories,
+  ExpensesTypes,
+} from './dtos/expenses-dto';
 
 @Injectable()
 export class ExpensesService {
@@ -16,7 +21,10 @@ export class ExpensesService {
     });
   }
 
-  async getExpenses(userEmail: string, expenseQuantity: string): Promise<any> {
+  async getExpenses(
+    userEmail: string,
+    expenseQuantity: string,
+  ): Promise<FormattedExpense[]> {
     try {
       const expensesQuery = expenseQuantity
         ? `SELECT * FROM expenses WHERE user_email = $1 ORDER BY updated_at DESC LIMIT $2`
@@ -31,12 +39,23 @@ export class ExpensesService {
         queryParams,
       );
 
-      const formattedExpenses = expenses.rows.map(
-        (expense: { expense_date: string | number | Date }) => {
+      const formattedExpenses: FormattedExpense[] = expenses.rows.map(
+        (expense: FormattedExpense) => {
           const formattedDate = new Date(
             expense.expense_date,
           ).toLocaleDateString('en-GB');
-          return { ...expense, expense_date: formattedDate };
+          return {
+            expense_type: expense.expense_type,
+            expense_amount: expense.expense_amount,
+            expense_category: expense.expense_category,
+            expense_date: formattedDate,
+            expense_year: expense.expense_year,
+            expense_month: expense.expense_month,
+            id: expense.id,
+            user_email: expense.user_email,
+            created_at: expense.created_at,
+            updated_at: expense.updated_at,
+          };
         },
       );
 
@@ -49,26 +68,29 @@ export class ExpensesService {
     }
   }
 
-  async getExpenseInfo(userEmail: string, id: string): Promise<any> {
+  async getExpenseInfo(
+    userEmail: string,
+    id: string,
+  ): Promise<FormattedExpense[]> {
     try {
-      const result: QueryResult = await this.pool.query(
+      const expenseInfo: QueryResult = await this.pool.query(
         'SELECT expense_type, expense_amount, expense_category, expense_date, expense_year, expense_month, id, updated_at FROM expenses WHERE user_email = $1 AND id = $2',
         [userEmail, id],
       );
 
-      return result.rows;
+      return expenseInfo.rows;
     } catch (error) {
       console.log(error);
     }
   }
 
-  async getExpensesCategories(): Promise<any> {
+  async getExpensesCategories(): Promise<ExpensesCategories[]> {
     try {
-      const result: QueryResult = await this.pool.query(
+      const expensesCategories: QueryResult = await this.pool.query(
         'SELECT * FROM expense_categories',
       );
 
-      return result.rows;
+      return expensesCategories.rows;
     } catch (error) {
       console.error(error);
       throw new Error(
@@ -77,20 +99,26 @@ export class ExpensesService {
     }
   }
 
-  async getExpenseTypes(userEmail: string, categoryId: string): Promise<any[]> {
+  async getExpensesTypes(
+    userEmail: string,
+    categoryId: string,
+  ): Promise<ExpensesTypes[]> {
     try {
-      const result: QueryResult = await this.pool.query(
+      const expensesTypes: QueryResult = await this.pool.query(
         'SELECT * FROM expense_types WHERE expense_category = $1',
         [categoryId],
       );
-      return result.rows;
+
+      return expensesTypes.rows;
     } catch (error) {
       console.error(error);
       throw new Error('An error occurred while retrieving expense types');
     }
   }
 
-  async createExpenseEntry(expenseEntry: ExpenseDto): Promise<any> {
+  async createExpensesEntry(
+    expenseEntry: ExpenseDto,
+  ): Promise<QueryResult<ExpenseDto>> {
     try {
       const {
         expenseTypeName,
@@ -102,7 +130,7 @@ export class ExpensesService {
         id,
         userEmail,
       } = expenseEntry;
-      const result = await this.pool.query(
+      const createExpense = await this.pool.query(
         `INSERT INTO expenses (expense_type, expense_amount, expense_category, expense_date, expense_year, expense_month, id, user_email) 
         VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
         [
@@ -116,14 +144,14 @@ export class ExpensesService {
           userEmail,
         ],
       );
-      return result;
+      return createExpense;
     } catch (error) {
       console.error(error);
       throw new Error('An error occurred while creating the expense entry');
     }
   }
 
-  async editExpense(expenseEntry: ExpenseDto): Promise<any> {
+  async editExpense(expenseEdit: ExpenseDto): Promise<QueryResult<ExpenseDto>> {
     try {
       const updated_at = new Date();
       const {
@@ -135,8 +163,8 @@ export class ExpensesService {
         expenseMonth,
         id,
         userEmail,
-      } = expenseEntry;
-      const result = await this.pool.query(
+      } = expenseEdit;
+      const editExpense = await this.pool.query(
         'UPDATE expenses SET expense_type = $1, expense_amount = $2, expense_category = $3, expense_date = $4, expense_year = $5, expense_month = $6, updated_at = $7 WHERE user_email = $8 AND id = $9;',
         [
           expenseTypeName,
@@ -150,10 +178,24 @@ export class ExpensesService {
           id,
         ],
       );
-      return result;
+      return editExpense;
     } catch (error) {
       console.error(error);
-      throw new Error('An error occurred while creating the expense entry');
+      throw new Error('An error occurred while editing the expense');
+    }
+  }
+
+  async deleteExpense(userEmail: string, id: string): Promise<void> {
+    try {
+      await this.pool.query(
+        'DELETE FROM expenses WHERE user_email = $1 AND id = $2',
+        [userEmail, id],
+      );
+
+      return;
+    } catch (error) {
+      console.error(error);
+      throw new Error('An error occurred while deleting the expense');
     }
   }
 }
