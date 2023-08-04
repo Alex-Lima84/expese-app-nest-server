@@ -80,7 +80,10 @@ export class ExpensesService {
 
       return expenseInfo.rows;
     } catch (error) {
-      console.log(error);
+      console.error(error);
+      throw new Error(
+        'An error occurred while retrieving the expense information',
+      );
     }
   }
 
