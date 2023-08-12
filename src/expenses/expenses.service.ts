@@ -147,6 +147,7 @@ export class ExpensesService {
           userEmail,
         ],
       );
+
       return createExpense;
     } catch (error) {
       console.error(error);
@@ -184,7 +185,7 @@ export class ExpensesService {
       return editExpense;
     } catch (error) {
       console.error(error);
-      throw new Error('An error occurred while editing the expense');
+      throw new Error('An error occurred while modifying the expense');
     }
   }
 

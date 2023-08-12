@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Pool, QueryResult } from 'pg';
-import { FormattedIncomes, IncomesTypes } from './dtos/incomes-dto';
+import { FormattedIncomes, IncomeDto, IncomesTypes } from './dtos/incomes-dto';
 
 @Injectable()
 export class IncomesService {
@@ -59,11 +59,77 @@ export class IncomesService {
   async getIncomesTypes(userEmail: string): Promise<IncomesTypes[]> {
     try {
       const incomesTypes = await this.pool.query('SELECT * FROM income_types');
-      console.log(incomesTypes.rows);
       return incomesTypes.rows;
     } catch (error) {
       console.error(error);
       throw new Error('An error occurred while retrieving expense types');
+    }
+  }
+
+  async createIncomeEntry(
+    incomeEntry: IncomeDto,
+  ): Promise<QueryResult<IncomeDto>> {
+    try {
+      const {
+        incomeTypeName,
+        incomeAmount,
+        incomeDate,
+        incomeYear,
+        incomeMonth,
+        id,
+        userEmail,
+      } = incomeEntry;
+
+      const newIncome = await this.pool.query(
+        `INSERT INTO incomes (income_type, income_amount, income_date, income_year, income_month, id, user_email) 
+        VALUES($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          incomeTypeName,
+          incomeAmount,
+          incomeDate,
+          incomeYear,
+          incomeMonth,
+          id,
+          userEmail,
+        ],
+      );
+
+      return newIncome;
+    } catch (error) {
+      console.error(error);
+      throw new Error('An error occurred while creating the expense entry');
+    }
+  }
+
+  async editIncome(incomeEdit: IncomeDto): Promise<QueryResult<IncomeDto>> {
+    try {
+      const updated_at = new Date();
+      const {
+        incomeTypeName,
+        incomeAmount,
+        incomeDate,
+        incomeYear,
+        incomeMonth,
+        id,
+        userEmail,
+      } = incomeEdit;
+      const editIncome = await this.pool.query(
+        'UPDATE incomes SET income_type = $1, income_amount = $2, income_date = $3, income_year = $4, income_month = $5, updated_at = $6 WHERE id = $7 AND user_email = $8;',
+        [
+          incomeTypeName,
+          incomeAmount,
+          incomeDate,
+          incomeYear,
+          incomeMonth,
+          updated_at,
+          id,
+          userEmail,
+        ],
+      );
+      return editIncome;
+    } catch (error) {
+      console.error(error);
+      throw new Error('An error occurred while modifying the income');
     }
   }
 }

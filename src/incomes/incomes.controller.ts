@@ -14,11 +14,12 @@ import { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { IncomesService } from './incomes.service';
 import { JwtAuthGuard } from 'src/jwt-guard/jwt-auth.guard';
+import { IncomeDto } from './dtos/incomes-dto';
 
 @Controller('incomes')
 @UseGuards(JwtAuthGuard)
 export class IncomesController {
-  constructor(private readonly incomesService: IncomesService) { }
+  constructor(private readonly incomesService: IncomesService) {}
 
   @Get('/:userEmail')
   async getIncomes(
@@ -78,6 +79,71 @@ export class IncomesController {
 
       const incomeTypes = await this.incomesService.getIncomesTypes(userEmail);
       res.json(incomeTypes);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: 'An error occurred' });
+    }
+  }
+
+  @Post('/income-entry')
+  async createIncomeEntry(
+    @Body() incomeEntryDto: IncomeDto,
+    @Res() res: Response,
+  ) {
+    try {
+      const {
+        incomeTypeName,
+        incomeAmount,
+        incomeDate,
+        incomeYear,
+        incomeMonth,
+        userEmail,
+      } = incomeEntryDto;
+      const id = uuidv4();
+
+      const newIncome = await this.incomesService.createIncomeEntry({
+        incomeTypeName,
+        incomeAmount,
+        incomeDate,
+        incomeYear,
+        incomeMonth,
+        id,
+        userEmail,
+      });
+
+      res.json(newIncome);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: 'An error occurred' });
+    }
+  }
+
+  @Put('/income/:userEmail/:id')
+  async editIncome(@Body() incomeUpdateDto: IncomeDto, @Res() res: Response) {
+    try {
+      const {
+        incomeTypeName,
+        incomeAmount,
+        incomeDate,
+        incomeYear,
+        incomeMonth,
+        userEmail,
+        id,
+      } = incomeUpdateDto;
+      const editIncome = await this.incomesService.editIncome({
+        incomeTypeName,
+        incomeAmount,
+        incomeDate,
+        incomeYear,
+        incomeMonth,
+        id,
+        userEmail,
+      });
+      res.json(editIncome);
     } catch (error) {
       console.error(error);
       res
