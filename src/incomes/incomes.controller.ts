@@ -151,4 +151,29 @@ export class IncomesController {
         .json({ error: 'An error occurred' });
     }
   }
+
+  @Delete('/income/:userEmail/:id')
+  async deleteExpense(
+    @Param('userEmail') userEmail: string,
+    @Param('id') id: string,
+    @Res() res: Response,
+  ) {
+    try {
+      const request = res.req;
+      if (userEmail !== request['userEmail']) {
+        return res.status(HttpStatus.FORBIDDEN).json({ error: 'Forbidden' });
+      }
+
+      const deleteIncome = await this.incomesService.deleteIncome(
+        userEmail,
+        id,
+      );
+      res.json(deleteIncome);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: 'An error occurred' });
+    }
+  }
 }

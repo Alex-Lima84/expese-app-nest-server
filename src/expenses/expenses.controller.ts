@@ -21,12 +21,13 @@ import { ExpenseDto } from './dtos/expenses-dto';
 export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 
-  @Get('/:userEmail/:expenseQuantity')
+  @Get('entries/:userEmail/:expenseQuantity')
   async getExpenses(
     @Param('userEmail') userEmail: string,
     @Param('expenseQuantity') expenseQuantity: string,
     @Res() res: Response,
   ) {
+    console.log(userEmail);
     try {
       const request = res.req;
       if (userEmail !== request['userEmail']) {
@@ -98,6 +99,82 @@ export class ExpensesController {
         categoryId,
       );
       res.json(expenseTypes);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: 'An error occurred' });
+    }
+  }
+
+  @Get('/expenses-years/:userEmail')
+  async getExpensesYears(
+    @Param('userEmail') userEmail: string,
+    @Res() res: Response,
+  ) {
+    try {
+      const request = res.req;
+      if (userEmail !== request['userEmail']) {
+        console.log('erro no e-mail');
+        return res.status(HttpStatus.FORBIDDEN).json({ error: 'Forbidden' });
+      }
+
+      const expenses = await this.expensesService.getExpensesYears(userEmail);
+      res.json(expenses);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: 'An error occurred' });
+    }
+  }
+
+  @Get('/expenses-month/:expenseYear/:userEmail')
+  async getExpenseMonthsByYear(
+    @Param('userEmail') userEmail: string,
+    @Param('expenseYear') expenseYear: string,
+    @Res() res: Response,
+  ) {
+    try {
+      const request = res.req;
+      if (userEmail !== request['userEmail']) {
+        return res.status(HttpStatus.FORBIDDEN).json({ error: 'Forbidden' });
+      }
+
+      const expenseMonthsByYear =
+        await this.expensesService.getExpenseMonthsByYear(
+          userEmail,
+          expenseYear,
+        );
+      res.json(expenseMonthsByYear);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: 'An error occurred' });
+    }
+  }
+
+  @Get('/expenses-month/:expenseMonth/:currentExpenseYear/:userEmail')
+  async getExpensesByMonthAndYear(
+    @Param('userEmail') userEmail: string,
+    @Param('expenseMonth') expenseMonth: string,
+    @Param('currentExpenseYear') currentExpenseYear: string,
+    @Res() res: Response,
+  ) {
+    try {
+      const request = res.req;
+      if (userEmail !== request['userEmail']) {
+        return res.status(HttpStatus.FORBIDDEN).json({ error: 'Forbidden' });
+      }
+
+      const expenseMonthsByYear =
+        await this.expensesService.getExpensesByMonthAndYear(
+          userEmail,
+          expenseMonth,
+          currentExpenseYear,
+        );
+      res.json(expenseMonthsByYear);
     } catch (error) {
       console.error(error);
       res
@@ -188,11 +265,11 @@ export class ExpensesController {
         return res.status(HttpStatus.FORBIDDEN).json({ error: 'Forbidden' });
       }
 
-      const expenseTypes = await this.expensesService.deleteExpense(
+      const deleteExpense = await this.expensesService.deleteExpense(
         userEmail,
         id,
       );
-      res.json(expenseTypes);
+      res.json(deleteExpense);
     } catch (error) {
       console.error(error);
       res

@@ -5,6 +5,8 @@ import {
   FormattedExpense,
   ExpensesCategories,
   ExpensesTypes,
+  TransformedExpenseMonth,
+  TransformedExpenseDate,
 } from './dtos/expenses-dto';
 
 @Injectable()
@@ -113,6 +115,119 @@ export class ExpensesService {
       );
 
       return expensesTypes.rows;
+    } catch (error) {
+      console.error(error);
+      throw new Error('An error occurred while retrieving expense types');
+    }
+  }
+
+  async getExpensesYears(userEmail: string) {
+    try {
+      const expenses: QueryResult = await this.pool.query(
+        `SELECT * FROM expenses WHERE user_email = $1 ORDER BY updated_at DESC`,
+        [userEmail],
+      );
+
+      const formattedExpenses: { expense_year: string }[] = expenses.rows.map(
+        (expense) => {
+          return {
+            expense_year: expense.expense_year,
+          };
+        },
+      );
+
+      return formattedExpenses;
+    } catch (error) {
+      console.error(error);
+      throw new Error(
+        'An error occurred while retrieving expenses information',
+      );
+    }
+  }
+
+  async getExpenseMonthsByYear(
+    userEmail: string,
+    expenseYear: string,
+  ): Promise<TransformedExpenseMonth[]> {
+    try {
+      const expenseMonthsByYear: QueryResult = await this.pool.query(
+        'SELECT DISTINCT expense_month FROM expenses WHERE user_email = $1 AND expense_year = $2 ORDER BY expense_month ASC',
+        [userEmail, expenseYear],
+      );
+
+      const transformedExpenseMonths = expenseMonthsByYear.rows.map(
+        (row: { expense_month: string }) => {
+          const expenseMonth = row.expense_month;
+          const monthNames = [
+            'Janeiro',
+            'Fevereiro',
+            'Março',
+            'Abril',
+            'Maio',
+            'Junho',
+            'Julho',
+            'Agosto',
+            'Setembro',
+            'Outubro',
+            'Novembro',
+            'Dezembro',
+          ];
+          const transformedMonth = monthNames[parseInt(expenseMonth) - 1];
+
+          return { expense_month: transformedMonth };
+        },
+      );
+
+      return transformedExpenseMonths;
+    } catch (error) {
+      console.error(error);
+      throw new Error('An error occurred while retrieving expense types');
+    }
+  }
+
+  async getExpensesByMonthAndYear(
+    userEmail: string,
+    expenseMonth: string,
+    currentExpenseYear: string,
+  ): Promise<TransformedExpenseDate[]> {
+    const monthNames = [
+      'Janeiro',
+      'Fevereiro',
+      'Março',
+      'Abril',
+      'Maio',
+      'Junho',
+      'Julho',
+      'Agosto',
+      'Setembro',
+      'Outubro',
+      'Novembro',
+      'Dezembro',
+    ];
+    const transformedMonthIndex = monthNames.findIndex(
+      (month) => month.toLowerCase() === expenseMonth.toLowerCase(),
+    );
+
+    if (transformedMonthIndex === -1) {
+      throw new Error('Invalid expense month');
+    }
+
+    const originalMonth = String(transformedMonthIndex + 1).padStart(2, '0');
+    try {
+      const expenses = await this.pool.query(
+        `SELECT * FROM expenses WHERE user_email = $1 AND expense_month = $2 AND expense_year = $3`,
+        [userEmail, originalMonth, currentExpenseYear],
+      );
+
+      const formattedExpenses = expenses.rows.map(
+        (expense: { expense_date: string | number | Date }) => {
+          const formattedDate = new Date(
+            expense.expense_date,
+          ).toLocaleDateString('en-GB');
+          return { ...expense, expense_date: formattedDate };
+        },
+      );
+      return formattedExpenses;
     } catch (error) {
       console.error(error);
       throw new Error('An error occurred while retrieving expense types');

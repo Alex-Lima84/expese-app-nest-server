@@ -34,3 +34,11 @@ export interface ExpensesTypes {
   id: string;
   created_at: Date;
 }
+
+export interface TransformedExpenseMonth {
+  expense_month: string;
+}
+
+export interface TransformedExpenseDate {
+  expense_date: string;
+}

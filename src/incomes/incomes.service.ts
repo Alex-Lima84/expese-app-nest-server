@@ -132,4 +132,18 @@ export class IncomesService {
       throw new Error('An error occurred while modifying the income');
     }
   }
+
+  async deleteIncome(userEmail: string, id: string): Promise<void> {
+    try {
+      await this.pool.query(
+        'DELETE FROM incomes WHERE user_email = $1 AND id = $2',
+        [userEmail, id],
+      );
+
+      return;
+    } catch (error) {
+      console.error(error);
+      throw new Error('An error occurred while deleting the income');
+    }
+  }
 }
