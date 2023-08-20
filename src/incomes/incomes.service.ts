@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Pool, QueryResult } from 'pg';
-import { FormattedIncomes, IncomeDto, IncomesTypes } from './dtos/incomes-dto';
+import {
+  FormattedIncomes,
+  IncomeDto,
+  IncomesTypes,
+  TransformedIncomeDate,
+  TransformedIncomeMonth,
+} from './dtos/incomes-dto';
 
 @Injectable()
 export class IncomesService {
@@ -63,6 +69,111 @@ export class IncomesService {
     } catch (error) {
       console.error(error);
       throw new Error('An error occurred while retrieving expense types');
+    }
+  }
+
+  async getIncomesYears(userEmail: string) {
+    try {
+      const incomesYears: QueryResult = await this.pool.query(
+        `SELECT DISTINCT income_year FROM incomes WHERE user_email = $1 ORDER BY income_year DESC`,
+        [userEmail],
+      );
+
+      return incomesYears.rows;
+    } catch (error) {
+      console.error(error);
+      throw new Error(
+        'An error occurred while retrieving expenses information',
+      );
+    }
+  }
+
+  async getIncomeMonthsByYear(
+    userEmail: string,
+    incomeYear: string,
+  ): Promise<TransformedIncomeMonth[]> {
+    try {
+      const incomeMonthsByYear: QueryResult = await this.pool.query(
+        'SELECT DISTINCT income_month FROM incomes WHERE user_email = $1 AND income_year = $2 ORDER BY income_month ASC',
+        [userEmail, incomeYear],
+      );
+
+      const transformedIncomeMonths = incomeMonthsByYear.rows.map(
+        (row: { income_month: string }) => {
+          const incomeMonth = row.income_month;
+          const monthNames = [
+            'Janeiro',
+            'Fevereiro',
+            'Março',
+            'Abril',
+            'Maio',
+            'Junho',
+            'Julho',
+            'Agosto',
+            'Setembro',
+            'Outubro',
+            'Novembro',
+            'Dezembro',
+          ];
+          const transformedMonth = monthNames[parseInt(incomeMonth) - 1];
+
+          return { income_month: transformedMonth };
+        },
+      );
+
+      return transformedIncomeMonths;
+    } catch (error) {
+      console.error(error);
+      throw new Error('An error occurred while retrieving expense types');
+    }
+  }
+
+  async getIncomesByMonthAndYear(
+    userEmail: string,
+    incomeMonth: string,
+    currentIncomeYear: string,
+  ): Promise<TransformedIncomeDate[]> {
+    const monthNames = [
+      'Janeiro',
+      'Fevereiro',
+      'Março',
+      'Abril',
+      'Maio',
+      'Junho',
+      'Julho',
+      'Agosto',
+      'Setembro',
+      'Outubro',
+      'Novembro',
+      'Dezembro',
+    ];
+    const transformedMonthIndex = monthNames.findIndex(
+      (month) => month.toLowerCase() === incomeMonth.toLowerCase(),
+    );
+
+    if (transformedMonthIndex === -1) {
+      throw new Error('Invalid income month');
+    }
+
+    const originalMonth = String(transformedMonthIndex + 1).padStart(2, '0');
+    try {
+      const incomes = await this.pool.query(
+        `SELECT * FROM incomes WHERE user_email = $1 AND income_month = $2 AND income_year = $3`,
+        [userEmail, originalMonth, currentIncomeYear],
+      );
+
+      const formattedIncomes = incomes.rows.map(
+        (income: { income_date: string | number | Date }) => {
+          const formattedDate = new Date(income.income_date).toLocaleDateString(
+            'en-GB',
+          );
+          return { ...income, income_date: formattedDate };
+        },
+      );
+      return formattedIncomes;
+    } catch (error) {
+      console.error(error);
+      throw new Error('An error occurred while retrieving all incomes');
     }
   }
 

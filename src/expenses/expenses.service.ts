@@ -123,20 +123,12 @@ export class ExpensesService {
 
   async getExpensesYears(userEmail: string) {
     try {
-      const expenses: QueryResult = await this.pool.query(
-        `SELECT * FROM expenses WHERE user_email = $1 ORDER BY updated_at DESC`,
+      const expensesYears: QueryResult = await this.pool.query(
+        `SELECT DISTINCT expense_year FROM expenses WHERE user_email = $1 ORDER BY expense_year DESC`,
         [userEmail],
       );
 
-      const formattedExpenses: { expense_year: string }[] = expenses.rows.map(
-        (expense) => {
-          return {
-            expense_year: expense.expense_year,
-          };
-        },
-      );
-
-      return formattedExpenses;
+      return expensesYears.rows;
     } catch (error) {
       console.error(error);
       throw new Error(
@@ -230,7 +222,7 @@ export class ExpensesService {
       return formattedExpenses;
     } catch (error) {
       console.error(error);
-      throw new Error('An error occurred while retrieving expense types');
+      throw new Error('An error occurred while retrieving all expenses');
     }
   }
 

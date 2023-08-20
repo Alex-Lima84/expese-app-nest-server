@@ -26,3 +26,11 @@ export interface IncomesTypes {
   id: string;
   created_at: Date;
 }
+
+export interface TransformedIncomeMonth {
+  income_month: string;
+}
+
+export interface TransformedIncomeDate {
+  income_date: string;
+}

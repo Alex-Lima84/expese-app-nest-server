@@ -87,6 +87,80 @@ export class IncomesController {
     }
   }
 
+  @Get('/incomes-years/:userEmail')
+  async getIncomesYears(
+    @Param('userEmail') userEmail: string,
+    @Res() res: Response,
+  ) {
+    try {
+      const request = res.req;
+      if (userEmail !== request['userEmail']) {
+        console.log('erro no e-mail');
+        return res.status(HttpStatus.FORBIDDEN).json({ error: 'Forbidden' });
+      }
+
+      const incomesYears = await this.incomesService.getIncomesYears(userEmail);
+      res.json(incomesYears);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: 'An error occurred' });
+    }
+  }
+
+  @Get('/incomes-month/:incomeYear/:userEmail')
+  async getIncomeMonthsByYear(
+    @Param('userEmail') userEmail: string,
+    @Param('incomeYear') incomeYear: string,
+    @Res() res: Response,
+  ) {
+    try {
+      const request = res.req;
+      if (userEmail !== request['userEmail']) {
+        return res.status(HttpStatus.FORBIDDEN).json({ error: 'Forbidden' });
+      }
+
+      const incomeMonthsByYear =
+        await this.incomesService.getIncomeMonthsByYear(userEmail, incomeYear);
+      res.json(incomeMonthsByYear);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: 'An error occurred' });
+    }
+  }
+
+  @Get('/incomes-month/:incomeMonth/:currentIncomeYear/:userEmail')
+  async getIncomesByMonthAndYear(
+    @Param('userEmail') userEmail: string,
+    @Param('incomeMonth') incomeMonth: string,
+    @Param('currentIncomeYear') currentIncomeYear: string,
+    @Res() res: Response,
+  ) {
+    try {
+      const request = res.req;
+      if (userEmail !== request['userEmail']) {
+        return res.status(HttpStatus.FORBIDDEN).json({ error: 'Forbidden' });
+      }
+
+      const incomesByMonthAndYear =
+        await this.incomesService.getIncomesByMonthAndYear(
+          userEmail,
+          incomeMonth,
+          currentIncomeYear,
+        );
+
+      res.json(incomesByMonthAndYear);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: 'An error occurred' });
+    }
+  }
+
   @Post('/income-entry')
   async createIncomeEntry(
     @Body() incomeEntryDto: IncomeDto,

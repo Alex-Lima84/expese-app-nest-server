@@ -27,7 +27,6 @@ export class ExpensesController {
     @Param('expenseQuantity') expenseQuantity: string,
     @Res() res: Response,
   ) {
-    console.log(userEmail);
     try {
       const request = res.req;
       if (userEmail !== request['userEmail']) {
@@ -119,8 +118,10 @@ export class ExpensesController {
         return res.status(HttpStatus.FORBIDDEN).json({ error: 'Forbidden' });
       }
 
-      const expenses = await this.expensesService.getExpensesYears(userEmail);
-      res.json(expenses);
+      const expensesYears = await this.expensesService.getExpensesYears(
+        userEmail,
+      );
+      res.json(expensesYears);
     } catch (error) {
       console.error(error);
       res
@@ -168,13 +169,13 @@ export class ExpensesController {
         return res.status(HttpStatus.FORBIDDEN).json({ error: 'Forbidden' });
       }
 
-      const expenseMonthsByYear =
+      const expenseByMonthAndYear =
         await this.expensesService.getExpensesByMonthAndYear(
           userEmail,
           expenseMonth,
           currentExpenseYear,
         );
-      res.json(expenseMonthsByYear);
+      res.json(expenseByMonthAndYear);
     } catch (error) {
       console.error(error);
       res
