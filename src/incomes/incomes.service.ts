@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { Pool, QueryResult } from 'pg';
 import {
   FormattedIncomes,
-  IncomeDto,
+  Income,
   IncomesTypes,
   TransformedIncomeDate,
   TransformedIncomeMonth,
-} from './dtos/incomes-dto';
+} from './interfaces/incomes-interfaces';
 
 @Injectable()
 export class IncomesService {
@@ -177,9 +177,7 @@ export class IncomesService {
     }
   }
 
-  async createIncomeEntry(
-    incomeEntry: IncomeDto,
-  ): Promise<QueryResult<IncomeDto>> {
+  async createIncomeEntry(incomeEntry: Income): Promise<QueryResult<Income>> {
     try {
       const {
         incomeTypeName,
@@ -212,7 +210,7 @@ export class IncomesService {
     }
   }
 
-  async editIncome(incomeEdit: IncomeDto): Promise<QueryResult<IncomeDto>> {
+  async editIncome(incomeEdit: Income): Promise<QueryResult<Income>> {
     try {
       const updated_at = new Date();
       const {

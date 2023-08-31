@@ -14,7 +14,7 @@ import { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { IncomesService } from './incomes.service';
 import { JwtAuthGuard } from 'src/jwt-guard/jwt-auth.guard';
-import { IncomeDto } from './dtos/incomes-dto';
+import { Income } from './interfaces/incomes-interfaces';
 
 @Controller('incomes')
 @UseGuards(JwtAuthGuard)
@@ -163,7 +163,7 @@ export class IncomesController {
 
   @Post('/income-entry')
   async createIncomeEntry(
-    @Body() incomeEntryDto: IncomeDto,
+    @Body() incomeEntryDto: Income,
     @Res() res: Response,
   ) {
     try {
@@ -197,7 +197,7 @@ export class IncomesController {
   }
 
   @Put('/income/:userEmail/:id')
-  async editIncome(@Body() incomeUpdateDto: IncomeDto, @Res() res: Response) {
+  async editIncome(@Body() incomeUpdateDto: Income, @Res() res: Response) {
     try {
       const {
         incomeTypeName,

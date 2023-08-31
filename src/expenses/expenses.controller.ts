@@ -14,7 +14,7 @@ import { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { ExpensesService } from './expenses.service';
 import { JwtAuthGuard } from 'src/jwt-guard/jwt-auth.guard';
-import { ExpenseDto } from './dtos/expenses-dto';
+import { Expense } from './interfaces/expenses-interfaces';
 
 @Controller('expenses')
 @UseGuards(JwtAuthGuard)
@@ -186,7 +186,7 @@ export class ExpensesController {
 
   @Post('/expense-entry')
   async createExpenseEntry(
-    @Body() expenseEntryDto: ExpenseDto,
+    @Body() expenseEntryDto: Expense,
     @Res() res: Response,
   ) {
     try {
@@ -220,10 +220,7 @@ export class ExpensesController {
   }
 
   @Put('/expense/:userEmail/:id')
-  async editExpense(
-    @Body() expenseUpdateDto: ExpenseDto,
-    @Res() res: Response,
-  ) {
+  async editExpense(@Body() expenseUpdateDto: Expense, @Res() res: Response) {
     try {
       const {
         expenseTypeName,

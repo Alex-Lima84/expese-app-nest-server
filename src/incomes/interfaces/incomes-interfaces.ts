@@ -1,4 +1,4 @@
-export interface IncomeDto {
+export interface Income {
   incomeTypeName: string;
   incomeAmount: string;
   incomeDate: string;

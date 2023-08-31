@@ -1,4 +1,4 @@
-export interface ExpenseDto {
+export interface Expense {
   expenseTypeName: string;
   expenseAmount: string;
   expenseCategoryName: string;
