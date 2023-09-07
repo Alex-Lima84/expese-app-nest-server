@@ -42,7 +42,7 @@ export class AuthService {
       return { email, token };
     } catch (error) {
       console.error('Error during signup:', error);
-      return { detail: 'Signup failed' };
+      return { detail: error.detail };
     }
   }
 
@@ -72,7 +72,7 @@ export class AuthService {
       }
     } catch (error) {
       console.error('Error during login:', error);
-      return { detail: 'Login failed' };
+      return { detail: error.detail };
     }
   }
 
