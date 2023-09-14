@@ -17,7 +17,7 @@ export class JwtAuthGuard implements CanActivate {
     const token = request.headers.authorization;
 
     if (!token) {
-      throw new UnauthorizedException('Unauthorized');
+      throw new UnauthorizedException('Token not found');
     }
 
     try {
@@ -25,6 +25,7 @@ export class JwtAuthGuard implements CanActivate {
       request['userEmail'] = decoded.email;
       return true;
     } catch (error) {
+      console.log(error);
       throw new UnauthorizedException('Unauthorized');
     }
   }
