@@ -6,7 +6,7 @@ import {
   IncomesTypes,
   TransformedIncomeDate,
   TransformedIncomeMonth,
-} from './interfaces/incomes-interfaces';
+} from './dtos/incomes.dto';
 
 @Injectable()
 export class IncomesService {

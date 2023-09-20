@@ -1,4 +1,4 @@
-export interface Expense {
+export class Expense {
   expenseTypeName: string;
   expenseAmount: string;
   expenseCategoryName: string;
@@ -9,7 +9,7 @@ export interface Expense {
   id?: string;
 }
 
-export interface FormattedExpense {
+export class FormattedExpense {
   expense_type: string;
   expense_amount: string;
   expense_category: string;
@@ -22,23 +22,23 @@ export interface FormattedExpense {
   updated_at: Date;
 }
 
-export interface ExpensesCategories {
+export class ExpensesCategories {
   expense_category: string;
   id: string;
   created_at: Date;
 }
 
-export interface ExpensesTypes {
+export class ExpensesTypes {
   expense_type: string;
   expense_category: string;
   id: string;
   created_at: Date;
 }
 
-export interface TransformedExpenseMonth {
+export class TransformedExpenseMonth {
   expense_month: string;
 }
 
-export interface TransformedExpenseDate {
+export class TransformedExpenseDate {
   expense_date: string;
 }

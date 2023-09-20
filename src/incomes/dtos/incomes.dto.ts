@@ -1,4 +1,4 @@
-export interface Income {
+export class Income {
   incomeTypeName: string;
   incomeAmount: string;
   incomeDate: string;
@@ -8,7 +8,7 @@ export interface Income {
   id?: string;
 }
 
-export interface FormattedIncomes {
+export class FormattedIncomes {
   id: string;
   income_type: string;
   income_amount: string;
@@ -20,17 +20,17 @@ export interface FormattedIncomes {
   updated_at: string;
 }
 
-export interface IncomesTypes {
+export class IncomesTypes {
   income_type: string;
   income_category: string;
   id: string;
   created_at: Date;
 }
 
-export interface TransformedIncomeMonth {
+export class TransformedIncomeMonth {
   income_month: string;
 }
 
-export interface TransformedIncomeDate {
+export class TransformedIncomeDate {
   income_date: string;
 }

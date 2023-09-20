@@ -7,7 +7,7 @@ import {
   ExpensesTypes,
   TransformedExpenseMonth,
   TransformedExpenseDate,
-} from './interfaces/expenses-interfaces';
+} from './dtos/expenses.dto';
 
 @Injectable()
 export class ExpensesService {

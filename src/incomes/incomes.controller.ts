@@ -14,7 +14,7 @@ import { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { IncomesService } from './incomes.service';
 import { JwtAuthGuard } from 'src/jwt-guard/jwt-auth.guard';
-import { Income } from './interfaces/incomes-interfaces';
+import { Income } from './dtos/incomes.dto';
 
 @Controller('incomes')
 @UseGuards(JwtAuthGuard)
