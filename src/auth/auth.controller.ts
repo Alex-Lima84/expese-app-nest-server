@@ -22,8 +22,8 @@ export class AuthController {
     return this.authService.login(loginDto.email, loginDto.password);
   }
 
-  @Get('test')
-  async testConnection(): Promise<string> {
-    return this.authService.testConnection();
-  }
+  // @Get('test')
+  // async testConnection(): Promise<string> {
+  //   return this.authService.testConnection();
+  // }
 }

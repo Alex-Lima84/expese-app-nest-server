@@ -1,24 +1,17 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-import { Pool, QueryResult } from 'pg';
-import * as dotenv from 'dotenv';
-
-dotenv.config();
+import { User } from 'src/typeorm/entities/user.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AuthService {
-  private readonly pool: Pool;
   private readonly jwtSecret: string;
 
-  constructor() {
-    this.pool = new Pool({
-      user: process.env.USERNAME,
-      password: process.env.PASSWORD,
-      host: process.env.HOST,
-      port: parseInt(process.env.DBPORT, 10),
-      database: process.env.DB,
-    });
+  constructor(
+    @InjectRepository(User) private userRepository: Repository<User>,
+  ) {
     this.jwtSecret = process.env.JWTSECRET;
   }
 
@@ -28,35 +21,36 @@ export class AuthService {
     lastName: string,
     password: string,
   ): Promise<any> {
+    const salt = bcrypt.genSaltSync(10);
+    const hashedPassword = bcrypt.hashSync(password, salt);
     try {
-      const salt = bcrypt.genSaltSync(10);
-      const hashedPassword = bcrypt.hashSync(password, salt);
+      const user = this.userRepository.create({
+        email,
+        first_name: firstName,
+        last_name: lastName,
+        hashed_password: hashedPassword,
+      });
 
-      const query =
-        'INSERT INTO users (email, first_name, last_name, hashed_password) VALUES($1, $2, $3, $4)';
-      const values = [email, firstName, lastName, hashedPassword];
-      await this.pool.query(query, values);
+      const createdUser = await this.userRepository.save(user);
 
       const token = jwt.sign({ email }, this.jwtSecret, { expiresIn: '1hr' });
 
-      return { email, token };
+      if (createdUser) {
+        return { email: createdUser.email, token };
+      }
     } catch (error) {
-      console.error('Error during signup:', error);
-      return { detail: error.detail };
+      console.error('Error during signin:', error);
+      return { detail: error };
     }
   }
 
   async login(email: string, password: string): Promise<any> {
     try {
-      const query = 'SELECT * FROM users WHERE email = $1';
-      const values = [email];
-      const result: QueryResult = await this.pool.query(query, values);
+      const user = await this.userRepository.findOne({ where: { email } });
 
-      if (result.rowCount === 0) {
+      if (!user) {
         return { detail: 'User not found' };
       }
-
-      const user = result.rows[0];
 
       const passwordMatch = await bcrypt.compare(
         password,
@@ -65,7 +59,6 @@ export class AuthService {
 
       if (passwordMatch) {
         const token = jwt.sign({ email }, this.jwtSecret, { expiresIn: '1hr' });
-
         return { email: user.email, token };
       } else {
         return { detail: 'Invalid password' };
@@ -78,8 +71,8 @@ export class AuthService {
 
   async testConnection(): Promise<string> {
     try {
-      const testQuery: QueryResult = await this.pool.query('SELECT 1');
-      console.log('Connection test result:', testQuery.rows[0]);
+      const result = await this.userRepository.query('SELECT 1');
+      console.log('Connection test result:', result[0]);
 
       return 'Database connection test successful';
     } catch (error) {
