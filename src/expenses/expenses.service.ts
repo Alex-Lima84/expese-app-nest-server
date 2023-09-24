@@ -1,65 +1,59 @@
 import { Injectable } from '@nestjs/common';
 import { Pool, QueryResult } from 'pg';
 import {
-  Expense,
+  ExpenseDTO,
   FormattedExpense,
   ExpensesCategories,
   ExpensesTypes,
   TransformedExpenseMonth,
   TransformedExpenseDate,
 } from './dtos/expenses.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { FindManyOptions, Repository } from 'typeorm';
+import { Expense } from 'src/typeorm/entities/expense.entity';
+import { ExpenseCategory } from 'src/typeorm/entities/expense-category.entity';
 
 @Injectable()
 export class ExpensesService {
   private readonly pool: Pool;
 
-  constructor() {
-    this.pool = new Pool({
-      user: process.env.USERNAME,
-      password: process.env.PASSWORD,
-      host: process.env.HOST,
-      port: parseInt(process.env.DBPORT, 10),
-      database: process.env.DB,
-    });
-  }
+  constructor(
+    @InjectRepository(Expense) private expenseRepository: Repository<Expense>,
+    @InjectRepository(ExpenseCategory)
+    private expenseCategoryRepository: Repository<ExpenseCategory>,
+  ) {}
 
   async getExpenses(
     userEmail: string,
     expenseQuantity: string,
   ): Promise<FormattedExpense[]> {
     try {
-      const expensesQuery = expenseQuantity
-        ? `SELECT * FROM expenses WHERE user_email = $1 ORDER BY updated_at DESC LIMIT $2`
-        : `SELECT * FROM expenses WHERE user_email = $1 ORDER BY updated_at DESC`;
+      const queryOptions: FindManyOptions<Expense> = {
+        where: { user_email: userEmail },
+        order: { updated_at: 'DESC' },
+      };
 
-      const queryParams = expenseQuantity
-        ? [userEmail, parseInt(expenseQuantity, 10)]
-        : [userEmail];
+      if (expenseQuantity) {
+        queryOptions.take = parseInt(expenseQuantity, 10);
+      }
 
-      const expenses: QueryResult = await this.pool.query(
-        expensesQuery,
-        queryParams,
-      );
+      const expenses = await this.expenseRepository.find(queryOptions);
 
-      const formattedExpenses: FormattedExpense[] = expenses.rows.map(
-        (expense: FormattedExpense) => {
-          const formattedDate = new Date(
-            expense.expense_date,
-          ).toLocaleDateString('en-GB');
-          return {
-            expense_type: expense.expense_type,
-            expense_amount: expense.expense_amount,
-            expense_category: expense.expense_category,
-            expense_date: formattedDate,
-            expense_year: expense.expense_year,
-            expense_month: expense.expense_month,
-            id: expense.id,
-            user_email: expense.user_email,
-            created_at: expense.created_at,
-            updated_at: expense.updated_at,
-          };
-        },
-      );
+      const formattedExpenses: FormattedExpense[] = expenses.map((expense) => {
+        const formattedDate = expense.expense_date.toLocaleDateString('en-GB');
+        return {
+          expense_type: expense.expense_type,
+          expense_amount: expense.expense_amount,
+          expense_category: expense.expense_category,
+          expense_date: formattedDate,
+          expense_year: expense.expense_year,
+          expense_month: expense.expense_month,
+          id: expense.id,
+          user_email: expense.user_email,
+          created_at: expense.created_at,
+          updated_at: expense.updated_at,
+        };
+      });
 
       return formattedExpenses;
     } catch (error) {
@@ -91,11 +85,9 @@ export class ExpensesService {
 
   async getExpensesCategories(): Promise<ExpensesCategories[]> {
     try {
-      const expensesCategories: QueryResult = await this.pool.query(
-        'SELECT * FROM expense_categories',
-      );
-
-      return expensesCategories.rows;
+      const expensesCategories = await this.expenseCategoryRepository.find();
+      console.log(expensesCategories);
+      return expensesCategories;
     } catch (error) {
       console.error(error);
       throw new Error(
@@ -227,8 +219,8 @@ export class ExpensesService {
   }
 
   async createExpensesEntry(
-    expenseEntry: Expense,
-  ): Promise<QueryResult<Expense>> {
+    expenseEntry: ExpenseDTO,
+  ): Promise<QueryResult<ExpenseDTO>> {
     try {
       const {
         expenseTypeName,
@@ -262,7 +254,7 @@ export class ExpensesService {
     }
   }
 
-  async editExpense(expenseEdit: Expense): Promise<QueryResult<Expense>> {
+  async editExpense(expenseEdit: ExpenseDTO): Promise<QueryResult<ExpenseDTO>> {
     try {
       const updated_at = new Date();
       const {

@@ -1,4 +1,4 @@
-export class Expense {
+export class ExpenseDTO {
   expenseTypeName: string;
   expenseAmount: string;
   expenseCategoryName: string;

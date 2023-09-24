@@ -6,6 +6,9 @@ import { IncomesModule } from './incomes/incomes.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './typeorm/entities/user.entity';
 import 'dotenv/config';
+import { Expense } from './typeorm/entities/expense.entity';
+import { ExpenseCategory } from './typeorm/entities/expense-category.entity';
+import { ExpenseType } from './typeorm/entities/expense-type.entity';
 
 const { USERNAME, PASSWORD, HOST, DBPORT, DB } = process.env;
 const TYPE = 'postgres';
@@ -23,7 +26,7 @@ const TYPE = 'postgres';
       username: USERNAME,
       password: PASSWORD,
       database: DB,
-      entities: [User],
+      entities: [User, Expense, ExpenseCategory, ExpenseType],
       synchronize: true,
     }),
   ],
