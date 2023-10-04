@@ -1,4 +1,3 @@
-// expense-type.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,

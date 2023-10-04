@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Pool, QueryResult } from 'pg';
+import { v4 as uuidv4 } from 'uuid';
 import {
   ExpenseDTO,
   FormattedExpense,
@@ -12,6 +13,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindManyOptions, Repository } from 'typeorm';
 import { Expense } from 'src/typeorm/entities/expense.entity';
 import { ExpenseCategory } from 'src/typeorm/entities/expense-category.entity';
+import { ExpenseType } from 'src/typeorm/entities/expense-type.entity';
 
 @Injectable()
 export class ExpensesService {
@@ -21,6 +23,8 @@ export class ExpensesService {
     @InjectRepository(Expense) private expenseRepository: Repository<Expense>,
     @InjectRepository(ExpenseCategory)
     private expenseCategoryRepository: Repository<ExpenseCategory>,
+    @InjectRepository(ExpenseType)
+    private expenseTypeRepository: Repository<ExpenseType>,
   ) {}
 
   async getExpenses(
@@ -40,7 +44,8 @@ export class ExpensesService {
       const expenses = await this.expenseRepository.find(queryOptions);
 
       const formattedExpenses: FormattedExpense[] = expenses.map((expense) => {
-        const formattedDate = expense.expense_date.toLocaleDateString('en-GB');
+        const expenseDate = new Date(expense.expense_date);
+        const formattedDate = expenseDate.toLocaleDateString('en-GB');
         return {
           expense_type: expense.expense_type,
           expense_amount: expense.expense_amount,
@@ -86,7 +91,6 @@ export class ExpensesService {
   async getExpensesCategories(): Promise<ExpensesCategories[]> {
     try {
       const expensesCategories = await this.expenseCategoryRepository.find();
-      console.log(expensesCategories);
       return expensesCategories;
     } catch (error) {
       console.error(error);
@@ -99,14 +103,18 @@ export class ExpensesService {
   async getExpensesTypes(
     userEmail: string,
     categoryId: string,
-  ): Promise<ExpensesTypes[]> {
+  ): Promise<ExpenseType[]> {
     try {
-      const expensesTypes: QueryResult = await this.pool.query(
-        'SELECT * FROM expense_types WHERE expense_category = $1',
-        [categoryId],
-      );
+      const expenseTypes = await this.expenseTypeRepository.find({
+        where: { expense_category: { id: categoryId } },
+        relations: ['expense_category'],
+      });
 
-      return expensesTypes.rows;
+      if (expenseTypes.length === 0) {
+        throw new NotFoundException('Expense types not found');
+      }
+
+      return expenseTypes;
     } catch (error) {
       console.error(error);
       throw new Error('An error occurred while retrieving expense types');
@@ -218,9 +226,7 @@ export class ExpensesService {
     }
   }
 
-  async createExpensesEntry(
-    expenseEntry: ExpenseDTO,
-  ): Promise<QueryResult<ExpenseDTO>> {
+  async createExpensesEntry(expenseEntry: ExpenseDTO): Promise<Expense> {
     try {
       const {
         expenseTypeName,
@@ -232,22 +238,19 @@ export class ExpensesService {
         id,
         userEmail,
       } = expenseEntry;
-      const createExpense = await this.pool.query(
-        `INSERT INTO expenses (expense_type, expense_amount, expense_category, expense_date, expense_year, expense_month, id, user_email) 
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          expenseTypeName,
-          expenseAmount,
-          expenseCategoryName,
-          expenseDate,
-          expenseYear,
-          expenseMonth,
-          id,
-          userEmail,
-        ],
-      );
 
-      return createExpense;
+      const newExpense = this.expenseRepository.create({
+        expense_type: expenseTypeName,
+        expense_amount: expenseAmount,
+        expense_category: expenseCategoryName,
+        expense_date: expenseDate,
+        expense_year: expenseYear,
+        expense_month: expenseMonth,
+        id: uuidv4(),
+        user_email: userEmail,
+      });
+
+      return this.expenseRepository.save(newExpense);
     } catch (error) {
       console.error(error);
       throw new Error('An error occurred while creating the expense entry');

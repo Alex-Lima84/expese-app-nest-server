@@ -29,7 +29,7 @@ export class Expense {
   @Column({ type: 'varchar', length: 255 })
   expense_month: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ type: 'varchar', length: 25 })
   user_email: string;
 
   @CreateDateColumn({ type: 'timestamp' })
