@@ -72,14 +72,17 @@ export class ExpensesService {
   async getExpenseInfo(
     userEmail: string,
     id: string,
-  ): Promise<FormattedExpense[]> {
+  ): Promise<Expense | undefined> {
     try {
-      const expenseInfo: QueryResult = await this.pool.query(
-        'SELECT expense_type, expense_amount, expense_category, expense_date, expense_year, expense_month, id, updated_at FROM expenses WHERE user_email = $1 AND id = $2',
-        [userEmail, id],
-      );
+      const expenseInfo = await this.expenseRepository.findOne({
+        where: { user_email: userEmail, id: id },
+      });
 
-      return expenseInfo.rows;
+      if (!expenseInfo) {
+        throw new NotFoundException('Expense not found');
+      }
+
+      return expenseInfo;
     } catch (error) {
       console.error(error);
       throw new Error(
@@ -235,7 +238,6 @@ export class ExpensesService {
         expenseDate,
         expenseYear,
         expenseMonth,
-        id,
         userEmail,
       } = expenseEntry;
 
@@ -257,34 +259,36 @@ export class ExpensesService {
     }
   }
 
-  async editExpense(expenseEdit: ExpenseDTO): Promise<QueryResult<ExpenseDTO>> {
+  async editExpense(expenseEdit: ExpenseDTO): Promise<Expense | undefined> {
     try {
-      const updated_at = new Date();
-      const {
-        expenseTypeName,
-        expenseAmount,
-        expenseCategoryName,
-        expenseDate,
-        expenseYear,
-        expenseMonth,
-        id,
-        userEmail,
-      } = expenseEdit;
-      const editExpense = await this.pool.query(
-        'UPDATE expenses SET expense_type = $1, expense_amount = $2, expense_category = $3, expense_date = $4, expense_year = $5, expense_month = $6, updated_at = $7 WHERE user_email = $8 AND id = $9;',
-        [
-          expenseTypeName,
-          expenseAmount,
-          expenseCategoryName,
-          expenseDate,
-          expenseYear,
-          expenseMonth,
-          updated_at,
-          userEmail,
-          id,
-        ],
+      const { id, userEmail } = expenseEdit;
+      const existingExpense = await this.expenseRepository.findOne({
+        where: { id, user_email: userEmail },
+      });
+
+      const updatedExpense = {
+        id: expenseEdit.id,
+        expense_type: expenseEdit.expenseTypeName,
+        expense_amount: expenseEdit.expenseAmount,
+        expense_category: expenseEdit.expenseCategoryName,
+        expense_date: expenseEdit.expenseDate,
+        expense_year: expenseEdit.expenseYear,
+        expense_month: expenseEdit.expenseMonth,
+        user_email: expenseEdit.userEmail,
+      };
+
+      if (!existingExpense) {
+        throw new NotFoundException('Expense not found');
+      }
+
+      const updateExpense = this.expenseRepository.merge(
+        existingExpense,
+        updatedExpense,
       );
-      return editExpense;
+
+      const savedExpense = await this.expenseRepository.save(updateExpense);
+
+      return savedExpense;
     } catch (error) {
       console.error(error);
       throw new Error('An error occurred while modifying the expense');
@@ -293,12 +297,15 @@ export class ExpensesService {
 
   async deleteExpense(userEmail: string, id: string): Promise<void> {
     try {
-      await this.pool.query(
-        'DELETE FROM expenses WHERE user_email = $1 AND id = $2',
-        [userEmail, id],
-      );
+      const expenseToDelete = await this.expenseRepository.findOne({
+        where: { user_email: userEmail, id },
+      });
 
-      return;
+      if (!expenseToDelete) {
+        throw new NotFoundException('Expense not found');
+      }
+
+      await this.expenseRepository.remove(expenseToDelete);
     } catch (error) {
       console.error(error);
       throw new Error('An error occurred while deleting the expense');
